@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>3D Chess Arena</title>
+<style>
+:root{--ac:#7fb2ff;--bg:rgba(12,16,28,.74);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;overflow:hidden;background:#0c0f18;color:#eef2ff;font-family:"Trebuchet MS","Segoe UI",sans-serif}
+#c3d{position:fixed;inset:0}.scr{position:fixed;inset:0;display:none;pointer-events:none}.scr.on{display:block}.scr>*{pointer-events:auto}
+#mod.on{pointer-events:auto;background:#0009}
+.panel{background:var(--bg);backdrop-filter:blur(10px);border:1px solid #fff2;border-radius:14px;padding:14px;position:absolute}
+.ctr{left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,92vw);max-height:90vh;overflow:auto}
+.b{background:#ffffff14;border:1px solid #fff3;color:inherit;padding:9px 14px;border-radius:9px;cursor:pointer;font:inherit;transition:.15s}.b:hover{background:var(--ac);color:#06101f;transform:translateY(-1px)}.b.p{background:var(--ac);color:#06101f;font-weight:700}
+input,select{width:100%;background:#0006;border:1px solid #fff3;color:inherit;padding:8px;border-radius:8px;font:inherit;margin:4px 0 10px}input[type=color]{height:38px;padding:2px}input[type=checkbox]{width:auto}
+h1{font-size:clamp(34px,6vw,64px);line-height:.95;letter-spacing:-1px;margin-bottom:6px}h2,h3{margin-bottom:8px}label{font-size:13px;opacity:.85}p,li{font-size:14px;line-height:1.5}
+.menu{position:absolute;left:5vw;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px;width:min(300px,86vw)}.menu .b{text-align:left;font-size:16px;padding:12px 16px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.pc{width:210px;top:12px;font-size:13px;border-width:2px}.pc.act{border-color:var(--ac)}#pw{left:12px}#pb{right:12px}
+.av{display:inline-block;width:38px;height:38px;border-radius:50%;vertical-align:middle;margin-right:6px;border:2px solid #fff4;background:radial-gradient(circle at 50% 42%,#ffd2a8 0 36%,transparent 38%),linear-gradient(var(--h) 0 48%,var(--s) 48%)}
+.cp{min-height:22px;font-size:18px;margin-top:4px;word-break:break-all}.cp i{font-style:normal;margin-right:1px}
+.pop{position:absolute;right:10px;top:8px;font-size:26px;font-weight:800;color:#ffd84a;animation:fl 1.3s forwards;pointer-events:none}@keyframes fl{to{transform:translateY(-40px);opacity:0}}
+#tp{left:50%;top:12px;transform:translateX(-50%);text-align:center;min-width:230px}#tp b{font-size:17px}
+#hs{right:12px;top:215px;width:210px;height:min(34vh,300px);overflow:auto;font-size:13px}
+#bt{left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:96vw;padding:8px}
+.end{left:50%;top:9vh;transform:translateX(-50%);width:min(420px,94vw);text-align:center}.end .av{width:64px;height:64px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;text-align:left;margin:10px 0}
+@media(max-width:760px){.pc{width:150px}#hs{display:none}}
+</style></head><body>
+<div id="c3d"></div>
+<div class="scr" id="menu"><div class="menu"><h1>3D Chess<br>Arena</h1>
+<button class="b p" onclick="showSetup('bot')">Play Game</button><button class="b" onclick="showSetup('local')">Local 2 Player</button><button class="b" onclick="showSetup('bot')">Play vs Robot (AI)</button><button class="b" onclick="showCustom()">Character Customization</button><button class="b" onclick="mHow()">How to Play</button><button class="b" onclick="mStats()">Statistics</button><button class="b" onclick="mSet()">Settings</button></div></div>
+<div class="scr" id="setup"><div class="panel ctr"><h2 id="sm"></h2>
+<label>Nama pemain 1</label><input id="n1" maxlength="14"><div id="n2r"><label>Nama pemain 2</label><input id="n2" maxlength="14" value="Player 2"></div>
+<label>Warna bidak pemain 1</label><select id="hc"><option value="w">Putih</option><option value="b">Hitam</option></select>
+<div id="dfr"><label>Tingkat kesulitan robot</label><select id="df"><option value="0">Easy</option><option value="1">Medium</option><option value="2" selected>Hard</option><option value="3">Expert</option></select></div>
+<div class="row"><button class="b" onclick="toMenu()">Kembali</button><button class="b p" onclick="goStart()">Mulai</button></div></div></div>
+<div class="scr" id="custom"><div class="panel" style="right:5vw;top:50%;transform:translateY(-50%);width:min(300px,90vw)"><h2>Karakter</h2>
+<label>Nama</label><input id="cn" maxlength="14" oninput="upd()"><label>Jenis</label><select id="cg" onchange="upd()"><option value="m">Laki-laki</option><option value="f">Perempuan</option></select>
+<label>Warna pakaian</label><input type="color" id="cs" oninput="upd()"><label>Warna rambut</label><input type="color" id="ch" oninput="upd()">
+<label>Aksesori</label><select id="ca" onchange="upd()"><option value="none">Tidak ada</option><option value="glasses">Kacamata</option><option value="hat">Topi</option><option value="crown">Mahkota</option></select>
+<button class="b p" style="width:100%" onclick="toMenu()">Simpan</button></div></div>
+<div class="scr" id="hud"><div class="panel pc" id="pw"></div><div class="panel pc" id="pb"></div>
+<div class="panel" id="tp"><b id="tn"></b><div id="st" style="color:#ffd84a;min-height:18px"></div><div id="tm"></div></div>
+<div class="panel" id="hs"><b>Riwayat langkah</b><div id="hl"></div></div>
+<div class="panel" id="bt"><button class="b" onclick="undo()">Undo</button><button class="b" onclick="startGame(G.o)">Restart</button><button class="b" onclick="resignQ()">Resign</button><button class="b" onclick="pause()">Pause</button><button class="b" onclick="camTo(home())">Kamera</button><button class="b" onclick="mSet()">Settings</button><button class="b" onclick="toMenu()">Menu</button></div></div>
+<div class="scr" id="end"><div class="panel end"><span class="av" id="eav"></span><h2 id="ew"></h2><p id="er"></p><div class="g2" id="eg"></div>
+<div class="row"><button class="b p" onclick="startGame(G.o)">Play Again</button><button class="b" onclick="review()">Review Match</button><button class="b" onclick="toMenu()">Main Menu</button></div></div></div>
+<div class="scr" id="mod"><div class="panel ctr" id="mb"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let prof=LS('cha_p',{name:'Player 1',g:'m',shirt:'#3b82f6',hair:'#3a2415',acc:'none'}),set=LS('cha_s',{theme:'classic',sfx:true,mus:false}),stats=LS('cha_st',{games:0,w:0,l:0,d:0,caps:0,time:0});
+const BOT={name:'CHESS BOT',g:'m',shirt:'#9aa4b2',hair:'#555555',acc:'antenna'},P2={name:'Player 2',g:'f',shirt:'#e86a8f',hair:'#5a3a22',acc:'none'};
+const V3=THREE.Vector3,VAL={p:1,n:3,b:3,r:5,q:9,k:0};let G=null,T=0,CT=null;
+// ---------- AUDIO ----------
+let AC,mi;function tone(f,d,ty,v,f2,at,force){if(!force&&!set.sfx)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime+(at||0),o=AC.createOscillator(),g=AC.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const SF={move:()=>tone(220,.12,'triangle',.3,90),cap:()=>{tone(160,.25,'sawtooth',.2,40);tone(90,.2,'square',.12,40,.03)},check:()=>{tone(660,.15,'square',.1);tone(880,.2,'square',.1,0,.15)},mate:()=>[523,415,330,262].forEach((f,i)=>tone(f,.4,'triangle',.2,0,i*.2)),win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.3,'triangle',.2,0,i*.15)),lose:()=>[392,330,262,196].forEach((f,i)=>tone(f,.4,'sawtooth',.1,0,i*.2))};
+function music(){clearInterval(mi);mi=0;if(set.mus){let i=0;const N=[261,329,392,523,392,329,293,349,440,587,440,349];mi=setInterval(()=>tone(N[i++%N.length],.5,'sine',.05,0,0,1),500)}}
+addEventListener('pointerdown',()=>{if(set.mus&&!mi)music()},{once:true});
+// ---------- THREE ----------
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;$('#c3d').appendChild(R.domElement);
+const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,1,.1,100),OC=new THREE.OrbitControls(C,R.domElement);
+OC.enableDamping=true;OC.minDistance=5;OC.maxDistance=24;OC.maxPolarAngle=Math.PI*.48;OC.autoRotateSpeed=.7;
+function rs(){R.setSize(innerWidth,innerHeight);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}addEventListener('resize',rs);rs();
+S.add(new THREE.AmbientLight(0xffffff,.55));const D=new THREE.DirectionalLight(0xffffff,.9);D.position.set(5,12,6);D.castShadow=true;D.shadow.mapSize.set(1024,1024);Object.assign(D.shadow.camera,{left:-12,right:12,top:12,bottom:-12});S.add(D);
+const L1=new THREE.PointLight(0xffffff,.7,30),L2=new THREE.PointLight(0xffffff,.7,30);L1.position.set(-9,5,0);L2.position.set(9,5,0);S.add(L1,L2);
+const mk=()=>new THREE.MeshStandardMaterial({roughness:.45,metalness:.15}),M={lt:mk(),dk:mk(),pw:mk(),pb:mk(),fl:mk(),fr:mk()};
+const TH={classic:{lt:0xe8cfa0,dk:0x8a5a33,w:0xf3ead8,b:0x3a2a22,fl:0x6b4a2f,bg:0x2a1c14,ac:0xffd9a0,e:0},neon:{lt:0x1b2b4a,dk:0x0f1730,w:0x5ffbff,b:0xff4fd8,fl:0x0a0d1e,bg:0x05060f,ac:0x58a6ff,e:1},royal:{lt:0xf0e6c8,dk:0x6b1e3a,w:0xf5d77a,b:0x2b1236,fl:0x3b1d2a,bg:0x1a0a14,ac:0xffc857,e:0},mini:{lt:0xf1f1ee,dk:0x9aa5ad,w:0xffffff,b:0x4a4f55,fl:0xdcdcd8,bg:0xe9e9e6,ac:0xffffff,e:0}};
+function applyTheme(){const t=TH[set.theme]||TH.classic;M.lt.color.setHex(t.lt);M.dk.color.setHex(t.dk);M.pw.color.setHex(t.w);M.pb.color.setHex(t.b);M.fl.color.setHex(t.fl);M.fr.color.setHex(t.dk);
+[['lt',t.lt],['dk',t.dk],['pw',t.w],['pb',t.b]].forEach(([k,c])=>{M[k].emissive.setHex(t.e?c:0);M[k].emissiveIntensity=k[0]=='p'?.3:.45});
+S.background=new THREE.Color(t.bg);S.fog=new THREE.Fog(t.bg,28,60);L1.color.setHex(t.ac);L2.color.setHex(t.ac)}
+const fl=new THREE.Mesh(new THREE.CircleGeometry(40,48),M.fl);fl.rotation.x=-Math.PI/2;fl.position.y=-1.5;fl.receiveShadow=true;S.add(fl);
+const ped=new THREE.Mesh(new THREE.CylinderGeometry(2.2,3,1.3,24),M.fr);ped.position.y=-.85;S.add(ped);
+const fr=new THREE.Mesh(new THREE.BoxGeometry(9.4,.3,9.4),M.fr);fr.position.y=-.05;fr.receiveShadow=true;S.add(fr);
+for(let f=0;f<8;f++)for(let r=0;r<8;r++){const t=new THREE.Mesh(new THREE.BoxGeometry(1,.2,1),(f+r)%2?M.lt:M.dk);t.position.set(f-3.5,.1,3.5-r);t.receiveShadow=true;S.add(t)}
+const pos=sq=>new V3('abcdefgh'.indexOf(sq[0])-3.5,.2,4.5-sq[1]);
+function mkPiece(t,col){const g=new THREE.Group(),m=col=='w'?M.pw:M.pb,
+PF={p:[[0,0],[.32,0],[.32,.07],[.2,.14],[.12,.4],[.18,.46],[.18,.52]],r:[[0,0],[.36,0],[.36,.08],[.24,.16],[.22,.6],[.3,.64],[.3,.78]],n:[[0,0],[.34,0],[.34,.08],[.22,.16],[.2,.45]],b:[[0,0],[.34,0],[.34,.08],[.2,.16],[.12,.5],[.2,.56]],q:[[0,0],[.38,0],[.38,.08],[.24,.16],[.13,.7],[.26,.78],[.2,.84]],k:[[0,0],[.38,0],[.38,.08],[.25,.16],[.14,.72],[.27,.8],[.22,.86]]};
+const ad=(ge,x,y,z)=>{const o=new THREE.Mesh(ge,m);o.position.set(x,y,z);g.add(o);return o};
+ad(new THREE.LatheGeometry(PF[t].map(a=>new THREE.Vector2(a[0],a[1])),20),0,0,0);
+if(t=='p')ad(new THREE.SphereGeometry(.17,14,10),0,.62,0);
+if(t=='r')ad(new THREE.CylinderGeometry(.3,.26,.16,16),0,.86,0);
+if(t=='b'){ad(new THREE.SphereGeometry(.15,14,10),0,.72,0).scale.y=1.4;ad(new THREE.SphereGeometry(.05,8,6),0,.97,0)}
+if(t=='q'){ad(new THREE.ConeGeometry(.22,.3,12),0,1,0);ad(new THREE.SphereGeometry(.06,8,6),0,1.18,0)}
+if(t=='k'){ad(new THREE.BoxGeometry(.09,.32,.09),0,1.02,0);ad(new THREE.BoxGeometry(.26,.09,.09),0,1.06,0)}
+if(t=='n'){const h=ad(new THREE.BoxGeometry(.24,.5,.34),0,.68,.04);h.rotation.x=.25;ad(new THREE.BoxGeometry(.2,.2,.3),0,.62,.3);ad(new THREE.ConeGeometry(.06,.14,6),-.07,.98,-.04);ad(new THREE.ConeGeometry(.06,.14,6),.07,.98,-.04);if(col=='w')g.rotation.y=Math.PI}
+g.traverse(o=>o.castShadow=true);return g}
+let SQ={};function syncPieces(ch){Object.values(SQ).forEach(o=>S.remove(o));SQ={};ch.board().forEach((row,i)=>row.forEach((p,f)=>{if(p){const sq='abcdefgh'[f]+(8-i),o=mkPiece(p.type,p.color);o.position.copy(pos(sq));S.add(o);SQ[sq]=o}}))}
+// tweens & fx
+const TW=[];const tw=(d,fn,done)=>TW.push({t:0,d,fn,done});
+const slide=(m,to,d,hop,done)=>{const a=m.position.clone();tw(d,p=>{const e=p*p*(3-2*p);m.position.lerpVectors(a,to,e);m.position.y=.2+Math.sin(Math.PI*p)*hop},done)};
+function burst(p,col){const n=28,ge=new THREE.BufferGeometry(),a=new Float32Array(n*3),v=[];for(let i=0;i<n;i++){a.set([p.x,p.y+.4,p.z],i*3);v.push(new V3((Math.random()-.5)*3,Math.random()*3+1,(Math.random()-.5)*3))}ge.setAttribute('position',new THREE.BufferAttribute(a,3));const mt=new THREE.PointsMaterial({color:col,size:.14,transparent:true}),pt=new THREE.Points(ge,mt);S.add(pt);
+tw(.9,q=>{const ar=ge.attributes.position.array;for(let i=0;i<n;i++){ar[i*3]+=v[i].x*.016;ar[i*3+1]+=(v[i].y-=.07)*.016;ar[i*3+2]+=v[i].z*.016}ge.attributes.position.needsUpdate=true;mt.opacity=1-q},()=>{S.remove(pt);ge.dispose();mt.dispose()})}
+function doMove(m){const me=SQ[m.from];delete SQ[m.from];if(!me)return;const cs=m.flags.includes('e')?m.to[0]+m.from[1]:m.to,cap=SQ[cs];
+if(cap){delete SQ[cs];burst(cap.position,m.color=='w'?0xdd5555:0xffd84a);tw(.35,p=>cap.scale.setScalar(Math.max(.01,1-p)),()=>S.remove(cap))}
+if(m.flags.includes('k')||m.flags.includes('q')){const r=m.color=='w'?'1':'8',ks=m.flags.includes('k'),a=ks?'h':'a',b=ks?'f':'d',rk=SQ[a+r];if(rk){delete SQ[a+r];SQ[b+r]=rk;slide(rk,pos(b+r),.5,.3)}}
+SQ[m.to]=me;slide(me,pos(m.to),.5,m.piece=='n'?1:.5,()=>{if(m.promotion){S.remove(me);const n=mkPiece(m.promotion,m.color);n.position.copy(pos(m.to));S.add(n);SQ[m.to]=n}})}
+// ---------- CHARACTERS ----------
+const CH={};
+function stick(p){const g=new THREE.Group(),f=p.g=='f',mt=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6}),sh=mt(p.shirt),sk=mt(0xffd2a8),hr=mt(p.hair),dk=mt(0x222733),gd=mt(0xffc83a);
+const ad=(par,ge,m,x,y,z)=>{const o=new THREE.Mesh(ge,m);o.position.set(x||0,y||0,z||0);o.castShadow=true;par.add(o);return o};
+[-.12,.12].forEach(x=>ad(g,new THREE.CylinderGeometry(.06,.06,1),dk,x,.5,0));
+const body=new THREE.Group();body.position.y=1;g.add(body);ad(body,new THREE.CylinderGeometry(f?.11:.17,.12,.9),sh,0,.45,0);if(f)ad(body,new THREE.ConeGeometry(.4,.6,16),sh,0,-.02,0);
+const head=new THREE.Group();head.position.y=1.2;body.add(head);ad(head,new THREE.SphereGeometry(.28,16,12),sk);
+ad(head,new THREE.SphereGeometry(.3,14,10,0,Math.PI*2,0,Math.PI*.5),hr,0,.04,0);if(f)ad(head,new THREE.BoxGeometry(.58,.62,.16),hr,0,-.12,-.16);
+[-.1,.1].forEach(x=>ad(head,new THREE.SphereGeometry(.035,8,6),dk,x,.04,.26));const mouth=ad(head,new THREE.BoxGeometry(.1,.03,.02),dk,0,-.1,.27);
+if(p.acc=='glasses')[-.1,.1].forEach(x=>ad(head,new THREE.TorusGeometry(.07,.015,6,14),dk,x,.04,.27));
+if(p.acc=='hat'){ad(head,new THREE.CylinderGeometry(.4,.4,.05,16),sh,0,.27,0);ad(head,new THREE.CylinderGeometry(.2,.22,.25,16),sh,0,.4,0)}
+if(p.acc=='crown')ad(head,new THREE.CylinderGeometry(.22,.17,.2,5),gd,0,.4,0);
+if(p.acc=='antenna'){ad(head,new THREE.CylinderGeometry(.015,.015,.3),dk,0,.45,0);ad(head,new THREE.SphereGeometry(.05,8,6),mt(0xff4444),0,.62,0)}
+const arm=x=>{const a=new THREE.Group();a.position.set(x,.8,0);body.add(a);ad(a,new THREE.CylinderGeometry(.045,.045,.7),sk,0,-.35,0);ad(a,new THREE.SphereGeometry(.07,8,6),sk,0,-.72,0);return a};
+return{g,body,head,mouth,aL:arm(-.22),aR:arm(.22),mood:'idle',base:'idle',until:0,y0:-1.5}}
+function setChar(c,p){if(CH[c])S.remove(CH[c].g);const o=stick(p);o.g.position.set(c=='w'?-5.6:5.6,-1.5,0);o.g.rotation.y=c=='w'?Math.PI/2:-Math.PI/2;o.g.scale.setScalar(1.5);S.add(o.g);CH[c]=o}
+const setMood=(c,m,d)=>{const o=CH[c];o.mood=m;o.until=d?T+d/1000:0};
+function animC(o,dt){if(o.until&&T>o.until){o.mood=o.base;o.until=0}const m=o.mood,t=T,s=Math.sin(t*2);let aL=.1,aR=.1,lz=0,rz=0,bx=0,hx=0,hz=0,jy=0,mw=1,mh=1;
+switch(m){case'idle':aL=.1+.05*s;aR=.1-.05*s;jy=.02*s;break;
+case'think':aR=-2.6;hz=.15*Math.sin(t*1.5);hx=.12;jy=.02*s;break;
+case'move':aR=-1.5;break;
+case'happy':case'win':{const k=Math.sin(t*10);aL=-2.9+.3*k;aR=-2.9-.3*k;jy=Math.abs(Math.sin(t*(m=='win'?7:6)))*(m=='win'?.5:.3);mw=mh=1.8;break}
+case'sad':case'lose':bx=.35;hx=.5;aL=aR=.05;mw=.6;break;
+case'shock':aL=aR=-2.5;hx=-.3;jy=.05*Math.sin(t*30);mw=.5;mh=5;break;
+case'draw':aL=aR=-.3;lz=-1;rz=1;hz=.2*Math.sin(t*3);break}
+const k=Math.min(1,dt*10),l=(a,b)=>a+(b-a)*k;o.aL.rotation.x=l(o.aL.rotation.x,aL);o.aR.rotation.x=l(o.aR.rotation.x,aR);o.aL.rotation.z=l(o.aL.rotation.z,lz);o.aR.rotation.z=l(o.aR.rotation.z,rz);
+o.body.rotation.x=l(o.body.rotation.x,bx);o.head.rotation.x=l(o.head.rotation.x,hx);o.head.rotation.z=l(o.head.rotation.z,hz);o.mouth.scale.x=l(o.mouth.scale.x,mw);o.mouth.scale.y=l(o.mouth.scale.y,mh);o.g.position.y=o.y0+jy}
+// ---------- CAMERA ----------
+const home=()=>G&&G.hc=='b'?[0,9,-10.5]:[0,9,10.5];
+function camTo(p,t,d){CT={a:C.position.clone(),b:OC.target.clone(),p:new V3(...p),t:new V3(...(t||[0,0,0])),k:0,d:d||1.4};OC.enabled=false}
+// ---------- UI HELPERS ----------
+const show=(...ids)=>$$('.scr:not(#mod)').forEach(e=>e.classList.toggle('on',ids.includes(e.id)));
+function modal(h){$('#mb').innerHTML=h;$('#mod').classList.add('on')}function closeM(){$('#mod').classList.remove('on')}
+const cls='<button class="b" style="width:100%;margin-top:8px" onclick="closeM()">Tutup</button>';
+function mHow(){modal('<h2>How to Play</h2><ul style="padding-left:18px"><li>Klik bidak milikmu, lalu klik kotak hijau (langkah legal) atau merah (memakan bidak).</li><li>Seret mouse untuk memutar kamera, scroll untuk zoom, tombol Kamera untuk reset.</li><li>Semua aturan resmi berlaku: rokade, en passant, promosi, skak, skakmat, stalemate, remis.</li><li>Skor: pion 1, kuda 3, gajah 3, benteng 5, menteri 9. Skor hanya tambahan; pemenang ditentukan aturan catur.</li></ul>'+cls)}
+function mStats(){modal(`<h2>Statistics</h2><div class="g2"><span>Pertandingan</span><b>${stats.games}</b><span>Menang</span><b>${stats.w}</b><span>Kalah</span><b>${stats.l}</b><span>Seri</span><b>${stats.d}</b><span>Bidak dimakan</span><b>${stats.caps}</b><span>Total waktu main</span><b>${Math.round(stats.time/60)} menit</b></div><button class="b" onclick="stats={games:0,w:0,l:0,d:0,caps:0,time:0};SV('cha_st',stats);mStats()">Reset</button>`+cls)}
+function mSet(){modal(`<h2>Settings</h2><label>Tema</label><select onchange="set.theme=this.value;SV('cha_s',set);applyTheme()">${Object.entries({classic:'Classic Wooden Chess',neon:'Modern Neon Chess',royal:'Royal Chess Arena',mini:'Minimalist Chess Room'}).map(([k,v])=>`<option value="${k}"${set.theme==k?' selected':''}>${v}</option>`).join('')}</select><label><input type="checkbox" ${set.sfx?'checked':''} onchange="set.sfx=this.checked;SV('cha_s',set)"> Efek suara</label><br><label><input type="checkbox" ${set.mus?'checked':''} onchange="set.mus=this.checked;SV('cha_s',set);music()"> Musik latar</label>`+cls)}
+function showSetup(m){sm=m;$('#n2r').style.display=m=='local'?'':'none';$('#dfr').style.display=m=='bot'?'':'none';$('#n1').value=prof.name;$('#sm').textContent=m=='bot'?'Lawan Robot':'Local 2 Player';show('setup')}let sm='bot';
+function goStart(){prof.name=$('#n1').value.trim()||'Player 1';SV('cha_p',prof);startGame({mode:sm,hc:$('#hc').value,diff:+$('#df').value,n1:prof.name,n2:$('#n2').value.trim()||'Player 2'})}
+function showCustom(){show('custom');$('#cn').value=prof.name;$('#cg').value=prof.g;$('#cs').value=prof.shirt;$('#ch').value=prof.hair;$('#ca').value=prof.acc;OC.autoRotate=false;setChar('w',prof);camTo([-2.6,.9,4.4],[-5.6,.6,0])}
+function upd(){prof={name:$('#cn').value||'Player 1',g:$('#cg').value,shirt:$('#cs').value,hair:$('#ch').value,acc:$('#ca').value};SV('cha_p',prof);setChar('w',prof)}
+function toMenu(){G=null;closeM();TW.length=0;setChar('w',prof);setChar('b',BOT);syncPieces(new Chess());marks();OC.autoRotate=true;camTo([0,7,12]);show('menu')}
+// ---------- GAME ----------
+function startGame(o){closeM();const h=o.hc,c=h=='w'?'b':'w';G={o,mode:o.mode,hc:h,diff:o.diff,chess:new Chess(),sel:null,mv:[],over:false,paused:false,el:0,score:{w:0,b:0},caps:{w:[],b:[]},busy:false,tk:0,pro:{}};
+G.pro[h]={...prof,name:o.n1};G.pro[c]=o.mode=='bot'?BOT:{...P2,name:o.n2};setChar('w',G.pro.w);setChar('b',G.pro.b);syncPieces(G.chess);marks();
+OC.autoRotate=false;C.position.set(0,16,24);OC.target.set(0,0,0);camTo(home(),[0,0,0],2.2);
+$('#pw').innerHTML=pcH('w');$('#pb').innerHTML=pcH('b');panels();hist();refresh();show('hud');if(G.mode=='bot')maybeBot()}
+const pcH=c=>`<span class="av" id="${c}av"></span><b id="${c}nm"></b> <small>${c=='w'?'(Putih)':'(Hitam)'}</small><div>Skor: <b id="${c}sc">0</b></div><div>Dimakan: <b id="${c}cn">0</b></div><div class="cp" id="${c}cp"></div>`;
+function panels(){const sy={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛'};['w','b'].forEach(c=>{const p=G.pro[c];$('#'+c+'nm').textContent=p.name;$('#'+c+'av').style.cssText=`--h:${p.hair};--s:${p.shirt}`;$('#'+c+'sc').textContent=G.score[c];$('#'+c+'cn').textContent=G.caps[c].length;
+$('#'+c+'cp').innerHTML=G.caps[c].map(t=>`<i style="color:${c=='w'?'#111':'#fff'};text-shadow:0 0 3px ${c=='w'?'#fff':'#000'}">${sy[t]}</i>`).join('')})}
+function pop(c,t){const e=document.createElement('span');e.className='pop';e.textContent=t;$('#p'+c).appendChild(e);setTimeout(()=>e.remove(),1300)}
+function recalc(nc){const s={w:0,b:0},cp={w:[],b:[]};G.chess.history({verbose:true}).forEach(m=>{if(m.captured){s[m.color]+=VAL[m.captured];cp[m.color].push(m.captured)}});G.score=s;G.caps=cp;panels();if(nc&&VAL[nc.t])pop(nc.c,'+'+VAL[nc.t])}
+function hist(){const h=G.chess.history();let t='';for(let i=0;i<h.length;i+=2)t+=`<div>${i/2+1}. ${h[i]} ${h[i+1]||''}</div>`;$('#hl').innerHTML=t;$('#hs').scrollTop=1e5}
+function refresh(){const c=G.chess,t=c.turn(),n=G.pro[t].name;if(!G.over){$('#tn').textContent='Giliran: '+n+(t=='w'?' (Putih)':' (Hitam)');$('#st').textContent=c.in_check()?'Check!':'';}
+$('#pw').classList.toggle('act',t=='w'&&!G.over);$('#pb').classList.toggle('act',t=='b'&&!G.over);if(!G.over){CH[t].base='think';CH[t=='w'?'b':'w'].base='idle';[CH.w,CH.b].forEach(o=>{if(!o.until)o.mood=o.base})}
+$('#tm').textContent=tm()+' • Langkah: '+Math.ceil(c.history().length/2)}
+const tm=()=>{const s=Math.floor(G.el);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+// markers
+let MK=[];function marks(){MK.forEach(o=>{S.remove(o);o.geometry.dispose();o.material.dispose()});MK=[];if(!G)return;const add=(sq,col)=>{const o=new THREE.Mesh(new THREE.PlaneGeometry(.92,.92),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.55}));o.rotation.x=-Math.PI/2;o.position.copy(pos(sq));o.position.y=.215;S.add(o);MK.push(o)};
+const c=G.chess;if(G.sel)add(G.sel,0xffd84a);G.mv.forEach(m=>add(m.to,m.captured||m.flags.includes('e')?0xff5a5a:0x46e08a));
+if(c.in_check()){for(const r of c.board())for(const p of r)if(p&&p.type=='k'&&p.color==c.turn()){}const sq=kingSq(c);if(sq)add(sq,0xff2a2a)}}
+function kingSq(c){let r=null;c.board().forEach((row,i)=>row.forEach((p,f)=>{if(p&&p.type=='k'&&p.color==c.turn())r='abcdefgh'[f]+(8-i)}));return r}
+// input
+const rc=new THREE.Raycaster(),pl=new THREE.Plane(new V3(0,1,0),-.2),pt=new V3();let pd=null;
+R.domElement.addEventListener('pointerdown',e=>pd=[e.clientX,e.clientY]);
+R.domElement.addEventListener('pointerup',e=>{if(!pd||Math.hypot(e.clientX-pd[0],e.clientY-pd[1])>5)return;rc.setFromCamera(new THREE.Vector2(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1),C);if(!rc.ray.intersectPlane(pl,pt))return;const f=Math.floor(pt.x+4),rk=Math.round(4.5-pt.z);if(f<0||f>7||rk<1||rk>8)return;click('abcdefgh'[f]+rk)});
+function click(sq){if(!G||G.over||G.paused||G.busy||G.rev)return;const c=G.chess,t=c.turn();if(G.mode=='bot'&&t!=G.hc)return;
+const m=G.mv.filter(x=>x.to==sq);if(G.sel&&m.length){if(m[0].promotion)promoQ(p=>tryMove(G.sel,sq,p));else tryMove(G.sel,sq);return}
+const p=c.get(sq);if(p&&p.color==t){G.sel=sq;G.mv=c.moves({square:sq,verbose:true})}else{G.sel=null;G.mv=[]}marks()}
+function promoQ(cb){window._pc=cb;modal('<h3>Promosi pion</h3><div class="row">'+[['q','♛ Menteri'],['r','♜ Benteng'],['b','♝ Gajah'],['n','♞ Kuda']].map(a=>`<button class="b" onclick="closeM();_pc('${a[0]}')">${a[1]}</button>`).join('')+'</div>')}
+function tryMove(f,t,p){const m=G.chess.move({from:f,to:t,promotion:p||'q'});if(m)afterMove(m)}
+function afterMove(m){doMove(m);G.sel=null;G.mv=[];const c=G.chess,me=m.color,op=me=='w'?'b':'w';recalc(m.captured?{c:me,t:m.captured}:null);hist();
+if(m.captured){setMood(me,'happy',1800);setMood(op,'sad',1800)}else setMood(me,'move',900);
+SF[m.captured?'cap':'move']();
+if(c.in_checkmate()){SF.mate();setMood(op,'shock',2500);end('Checkmate',me)}
+else if(c.in_draw()||c.in_stalemate()||c.in_threefold_repetition()||c.insufficient_material())end(c.in_stalemate()?'Stalemate':c.insufficient_material()?'Insufficient Material':c.in_threefold_repetition()?'Threefold Repetition':'Draw (aturan 50 langkah)',null);
+else if(c.in_check()){SF.check();setMood(op,'shock',1800)}
+refresh();marks();if(!G.over)maybeBot()}
+function end(reason,w){G.over=true;G.tk++;const l=w=='w'?'b':'w';stats.games++;stats.time+=G.el;stats.caps+=G.caps.w.length+G.caps.b.length;const hw=w==G.hc;if(!w)stats.d++;else if(G.mode=='bot'&&!hw)stats.l++;else stats.w++;SV('cha_st',stats);
+$('#st').textContent=reason;$('#tn').textContent=w?G.pro[w].name+' menang!':'Pertandingan seri';
+setTimeout(()=>{if(!G||!G.over)return;[CH.w,CH.b].forEach(o=>o.until=0);if(w){CH[w].base=CH[w].mood='win';CH[l].base=CH[l].mood='lose';SF[G.mode=='bot'&&!hw?'lose':'win']();const x=CH[w].g.position.x;camTo([x*.35,3.5,7.5],[x*.8,1,0],2)}else{CH.w.base=CH.w.mood=CH.b.base=CH.b.mood='draw';SF.lose()}
+const sc=w||'w',p=G.pro[sc];$('#eav').style.cssText=`--h:${p.hair};--s:${p.shirt}`;$('#ew').textContent=w?'Pemenang: '+G.pro[w].name:'Seri';$('#er').textContent='Alasan: '+reason+(w&&reason!='Checkmate'&&reason!='Resign'?'':'')+(w?' • Kalah: '+G.pro[l].name:'');
+const g=$('#eg');g.innerHTML='';[['Skor Putih',G.score.w],['Skor Hitam',G.score.b],['Bidak dimakan',G.caps.w.length+G.caps.b.length],['Durasi',tm()],['Langkah',Math.ceil(G.chess.history().length/2)]].forEach(([a,b])=>{const x=document.createElement('span'),y=document.createElement('b');x.textContent=a;y.textContent=b;g.append(x,y)});show('hud','end')},1500)}
+function resignQ(){if(!G||G.over)return;modal('<h3>Menyerah?</h3><div class="row"><button class="b" onclick="closeM()">Batal</button><button class="b p" onclick="closeM();resign()">Ya, menyerah</button></div>')}
+function resign(){const t=G.mode=='bot'?G.hc:G.chess.turn();end('Resign',t=='w'?'b':'w')}
+function pause(){if(!G||G.over)return;G.paused=true;modal('<h3>Permainan dijeda</h3><button class="b p" style="width:100%" onclick="G.paused=false;closeM()">Lanjutkan</button>')}
+function undo(){if(!G||G.over||G.busy||G.rev)return;const c=G.chess;let n=G.mode=='bot'?(c.turn()==G.hc?2:1):1;while(n--&&c.history().length)c.undo();G.tk++;G.sel=null;G.mv=[];TW.length=0;syncPieces(c);recalc();hist();refresh();marks();if(G.mode=='bot')maybeBot()}
+function review(){const g0=G,hs=G.chess.history({verbose:true});g0.rev=true;show('hud');syncPieces(new Chess());let i=0;const go=()=>{if(G!==g0)return;if(i>=hs.length){g0.rev=false;setTimeout(()=>{if(G===g0)show('hud','end')},1200);return}const m=hs[i++];doMove(m);SF[m.captured?'cap':'move']();setMood(m.color,m.captured?'happy':'move',800);setTimeout(go,950)};setTimeout(go,600)}
+// ---------- AI (alpha-beta) ----------
+const PV={p:100,n:320,b:330,r:500,q:900,k:0};
+function evalPos(c){let s=0;c.board().forEach((row,i)=>row.forEach((p,f)=>{if(!p)return;const cen=3.5-Math.max(Math.abs(f-3.5),Math.abs(i-3.5));let v=PV[p.type];if(p.type=='p')v+=(p.color=='w'?6-i:i-1)*8+cen*4;else if(p.type!='k'&&p.type!='r')v+=cen*8;s+=p.color=='w'?v:-v}));return c.turn()=='w'?s:-s}
+function nega(c,d,a,b,ply){if(!d)return evalPos(c);const ms=c.moves();if(!ms.length)return c.in_check()?-1e5+ply:0;ms.sort((x,y)=>y.includes('x')-x.includes('x'));for(const m of ms){c.move(m);const s=-nega(c,d-1,-b,-a,ply+1);c.undo();if(s>a){a=s;if(a>=b)break}}return a}
+function maybeBot(){if(G.mode!='bot'||G.over||G.chess.turn()==G.hc)return;const tk=++G.tk,c=G.chess,dp=[1,2,3,4][G.diff],lim=[0,0,2500,4000][G.diff],noise=[150,15,0,0][G.diff],t0=performance.now(),roots=c.moves().sort((x,y)=>y.includes('x')-x.includes('x'));let i=0,best=roots[0],bs=-1e9;G.busy=true;
+const step=()=>{if(G.tk!=tk||G.over)return;if(G.paused){setTimeout(step,200);return}
+if(i>=roots.length||(i>0&&performance.now()-t0>lim&&G.diff>1)){const w=Math.max(0,800-(performance.now()-t0));setTimeout(()=>{if(G.tk!=tk||G.over)return;G.busy=false;const m=c.move(best);if(m)afterMove(m)},w);return}
+const m=roots[i++];c.move(m);let s=-nega(c,dp-1,noise?-1e9:-1e9,noise?1e9:-bs,1)+Math.random()*noise;c.undo();if(s>bs){bs=s;best=m}setTimeout(step,0)};
+if(G.diff==0&&Math.random()<.3){best=roots[Math.floor(Math.random()*roots.length)];i=roots.length}setTimeout(step,300)}
+// ---------- LOOP ----------
+let last=performance.now(),lt='';
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;
+for(let i=TW.length-1;i>=0;i--){const o=TW[i];o.t+=dt;const p=Math.min(1,o.t/o.d);o.fn(p);if(p>=1){TW.splice(i,1);o.done&&o.done()}}
+if(CT){CT.k+=dt/CT.d;const k=Math.min(1,CT.k),e=k*k*(3-2*k);C.position.lerpVectors(CT.a,CT.p,e);OC.target.lerpVectors(CT.b,CT.t,e);if(k>=1){CT=null;OC.enabled=true}}
+Object.values(CH).forEach(o=>animC(o,dt));
+if(G&&!G.paused&&!G.over&&!G.rev){G.el+=dt;const t=tm();if(t!=lt){lt=t;$('#tm').textContent=t+' • Langkah: '+Math.ceil(G.chess.history().length/2)}}
+OC.update();R.render(S,C)}
+applyTheme();toMenu();C.position.set(0,7,12);CT=null;OC.enabled=true;requestAnimationFrame(loop);
+</script></body></html>
